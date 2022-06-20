@@ -1,0 +1,11 @@
+requests~=2.28.0
+redis~=4.3.3
+gevent
+gunicorn
+pymysql
+celery~=5.2.7
+dingtalk
+python-dotenv~=0.20.0
+SQLAlchemy~=1.4.37
+beautifulsoup4~=4.11.1
+lxml~=4.9.0

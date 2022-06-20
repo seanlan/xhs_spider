@@ -182,9 +182,13 @@ def cron_user_padding():
         user = session.query(User).filter(User.group_count > 0, User.red_id == '').order_by(User.id).first()
         if user:
             resp = xhs_spider.WhosecardXhsSpider.get_user_info(user.user_id)
-            if resp.get('ok', False):
-                u = resp.get('result', {}).get('data', {})
-                user.red_id = u.get('red_id', '')
+            if not resp:
+                user.red_id = "获取失败，需人工处理"
                 session.commit()
+            else:
+                if resp.get('ok', False):
+                    u = resp.get('result', {}).get('data', {})
+                    user.red_id = u.get('red_id', '')
+                    session.commit()
 
 

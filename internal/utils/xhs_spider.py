@@ -1224,7 +1224,7 @@ class WhosecardZhSpider(object):
 
 
 if __name__ == '__main__':
-    result = WhosecardXhsSpider.get_user_info("61405c40000000000201f2f5")
+    result = WhosecardXhsSpider.get_user_info("60c2c80a0000000020029b40")
     import json
     print(json.dumps(result))
 

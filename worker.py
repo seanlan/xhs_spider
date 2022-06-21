@@ -11,7 +11,7 @@ from sqlalchemy import create_engine
 platforms.C_FORCE_ROOT = True
 app = Celery('xhs_spider', include=['tasks'])
 app.config_from_object('config')
-engine = create_engine(app.conf["SQLALCHEMY_DATABASE_URI"], encoding='utf8', echo=False)
+engine = create_engine(app.conf["SQLALCHEMY_DATABASE_URI"], encoding='utf8', echo=False, pool_pre_ping=True)
 cache = redis.from_url(app.conf["REDIS_URI"])
 
 if __name__ == '__main__':

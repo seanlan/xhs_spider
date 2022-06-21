@@ -47,7 +47,7 @@ CELERYBEAT_SCHEDULE = {  # 定时执行任务
     },
     'cron_user_padding': {
         'task': 'tasks.cron_user_padding',
-        'schedule': timedelta(seconds=0.2),  # 每2秒执行一次
+        'schedule': timedelta(seconds=1),  # 每2秒执行一次
         'args': (),
     },
 }

@@ -169,6 +169,7 @@ def cron_search_note():
     """
     with Session(engine) as session:
         keyword = session.query(NoteKeyword).filter(NoteKeyword.status == 0).first()
+        print(keyword)
         if keyword:
             search_note(session, keyword)
 

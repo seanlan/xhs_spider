@@ -1224,7 +1224,7 @@ class WhosecardZhSpider(object):
 
 
 if __name__ == '__main__':
-    result = WhosecardXhsSpider.get_note_detail('62b07ac1000000000e02a923')
+    result = WhosecardXhsSpider.get_search_notes("小圈子", 1)
     import json
     print(json.dumps(result))
 

@@ -1224,7 +1224,7 @@ class WhosecardZhSpider(object):
 
 
 if __name__ == '__main__':
-    result = WhosecardXhsSpider.get_search_notes("小圈子", 1)
+    result = WhosecardXhsSpider.get_user_followings('5576c751e58d13445cbd63eb')
     import json
     print(json.dumps(result))
 

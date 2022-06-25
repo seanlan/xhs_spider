@@ -10,7 +10,8 @@ from sqlalchemy.dialects.mysql import insert
 from sqlalchemy.orm import Session
 
 from internal.model.model import UserKeyword, User, CATCH_STATUS_DONE, CATCH_STATUS_ING, CATCH_STATUS_INIT, NoteKeyword
-from internal.utils import xhs_spider, xhs_group
+from internal.utils import xhs_spider
+from internal.utils.xhs_helper import xhs_helper
 from worker import app, engine, cache
 from celery.utils.log import get_task_logger
 
@@ -110,7 +111,7 @@ def cron_search_users():
 def search_group(session: Session, user: User):
     """查询用户群聊列表
     """
-    resp = xhs_group.get_user_groups(user.user_id)
+    resp = xhs_helper.get_user_groups(user.user_id)
     ok = resp.get('success', False)
     if ok:
         data = resp.get('data', {})
@@ -167,6 +168,7 @@ def search_note(session: Session, note_keyword: NoteKeyword):
 def cron_search_note():
     """定时搜索用户群聊列表，入库
     """
+    logger.info("cron_search_note")
     with Session(engine) as session:
         keyword = session.query(NoteKeyword).filter(NoteKeyword.status == 0).first()
         print(keyword)
@@ -191,5 +193,7 @@ def cron_user_padding():
                     u = resp.get('result', {}).get('data', {})
                     user.red_id = u.get('red_id', '')
                     session.commit()
+
+
 
 

@@ -1,6 +1,7 @@
 import requests
 
-headers = {
+
+HEADERS = {
     'Host': 'www.xiaohongshu.com',
     'Connection': 'Keep-Alive',
     # 'Content-Length': '32',
@@ -26,17 +27,46 @@ headers = {
 }
 
 CHECK_GROUP_URL = 'https://www.xiaohongshu.com/api/im/red/group/personal_page_group_show_info'
+GET_GROUP_MEMBERS_URL = 'https://www.xiaohongshu.com/api/im/red/group/userinfo'
 
 
-def get_user_groups(userid):
-    data = {
-        'user_id': userid,
-    }
-    res = requests.post(url=CHECK_GROUP_URL, data=data, headers=headers)
-    print(res.text)
-    return res.json()
+class XHSHelper(object):
+
+    def __int__(self, headers=HEADERS):
+        self.headers = headers
+
+    def get_user_groups(self, userid):
+        """
+        获取用户所有群组
+        :param userid: 用户id
+        :return:
+        """
+        data = {
+            'user_id': userid,
+        }
+        res = requests.post(url=CHECK_GROUP_URL, data=data, headers=self.headers)
+        print(res.text)
+        return res.json()
+
+    def get_get_group_members(self, group_id):
+        """
+        获取群组成员
+        :param group_id:
+        :return:
+        """
+        data = {
+            'group_id': group_id,
+        }
+        res = requests.post(url=CHECK_GROUP_URL, data=data, headers=self.headers)
+        print(res.text)
+        return res.json()
+
+
+xhs_helper = XHSHelper(headers=HEADERS)
 
 
 if __name__ == '__main__':
-    user_id = '574f9d6582ec3901f345615f'
-    print(get_user_groups(user_id))
+    user_id = '5cc730f7000000001601b891'
+    xhs_helper.get_user_groups(user_id)
+    group_id = '135861640641118838'
+    xhs_helper.get_get_group_members(group_id='5cc730f7000000001601b891')

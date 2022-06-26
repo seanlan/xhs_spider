@@ -173,6 +173,7 @@ def cron_user_padding():
     with Session(engine) as session:
         user = session.query(User).filter(User.group_count > 0, User.red_id == '').order_by(User.id).first()
         if user:
+            logger.info('补全用户RedID信息：{}'.format(user.user_id))
             resp = WhosecardXhsSpider.get_user_info(user.user_id)
             if not resp:
                 user.red_id = "获取失败，需人工处理"
@@ -180,7 +181,7 @@ def cron_user_padding():
             else:
                 if resp.get('ok', False):
                     u = resp.get('result', {}).get('data', {})
-                    user.red_id = u.get('red_id', '')
+                    user.red_id = u.get('red_id', '获取失败')
                     session.commit()
 
 

@@ -219,6 +219,7 @@ class WhosecardXhsSpider(object):
         :param user_id:
         :return:
         """
+        print(f'get_user_info user_id:{user_id}')
         params = dict()
         params['user_id'] = user_id
         return cls.get_data_from_api_name('user_info', params)
@@ -1224,7 +1225,7 @@ class WhosecardZhSpider(object):
 
 
 if __name__ == '__main__':
-    result = WhosecardXhsSpider.get_user_followings('623eac5e000000001000d844')
+    result = WhosecardXhsSpider.get_user_info('622eae61000000001000ca29')
     import json
     print(json.dumps(result))
 

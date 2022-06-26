@@ -30,24 +30,40 @@ CELERYBEAT_SCHEDULE = {  # 定时执行任务
     #     'schedule': timedelta(seconds=5),  # 每5秒执行一次
     #     'args': (),
     # },
-    'cron_search_note': {
-        'task': 'tasks.cron_search_note',
-        'schedule': timedelta(seconds=1),  # 每2秒执行一次
-        'args': (),
-    },
     # 'cron_search_users': {
     #     'task': 'tasks.cron_search_users',
     #     'schedule': timedelta(seconds=2),  # 每2秒执行一次
     #     'args': (),
     # },
+
+    # 'cron_search_note': {
+    #     'task': 'tasks.cron_search_note',
+    #     'schedule': timedelta(seconds=1),  # 每2秒执行一次
+    #     'args': (),
+    # },
     'cron_search_group': {
-        'task': 'tasks.cron_search_group',
+        'task': 'tasks.cron_search_group',  # 获取用户拥有的群聊列表
         'schedule': timedelta(seconds=1),  # 每2秒执行一次
         'args': (),
     },
     'cron_user_padding': {
-        'task': 'tasks.cron_user_padding',
-        'schedule': timedelta(seconds=1),  # 每2秒执行一次
+        'task': 'tasks.cron_user_padding',  # 获取用户信息（获取redid）
+        'schedule': timedelta(seconds=1),  # 每1秒执行一次
+        'args': (),
+    },
+    'cron_user_groups': {
+        'task': 'tasks.cron_user_groups',   # 获取用户加入的群组
+        'schedule': timedelta(seconds=300),  # 每300秒执行一次
+        'args': (),
+    },
+    'cron_group_members': {
+        'task': 'tasks.cron_group_members',    # 获取群组成员
+        'schedule': timedelta(seconds=1),  # 每1秒执行一次
+        'args': (),
+    },
+    'cron_user_subscribe': {
+        'task': 'tasks.cron_user_subscribe',    # 获取用户关注的人
+        'schedule': timedelta(seconds=1),  # 每1秒执行一次
         'args': (),
     }
 }

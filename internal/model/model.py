@@ -19,6 +19,9 @@ mapper_registry.metadata.create_all(engine)
 
 
 class UserKeyword(Base):
+    """
+    用户搜索关键字表
+    """
 
     __tablename__ = 'user_keyword'
 
@@ -32,6 +35,9 @@ class UserKeyword(Base):
 
 
 class NoteKeyword(Base):
+    """
+    笔记搜索关键字表
+    """
 
     __tablename__ = 'note_keyword'
 
@@ -45,6 +51,9 @@ class NoteKeyword(Base):
 
 
 class User(Base):
+    """
+    用户表
+    """
 
     __tablename__ = 'user'
 
@@ -60,5 +69,35 @@ class User(Base):
         return '<User %r>' % self.user_id
 
 
+class UserGroup(Base):
+    """
+    用户群聊表
+    """
 
+    __tablename__ = 'user_group'
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(String(50), nullable=False, default='')
+    group_id = Column(String(50), nullable=False, unique=True)
+    group_name = Column(String(50), nullable=False, default='')
+    status = Column(Integer, nullable=False, default=0)    # 0:未处理，1:处理中 2:处理完成
+
+    def __repr__(self):
+        return '<UserGroup %r>' % self.group_id
+
+
+class UserSubscribeSpider(Base):
+    """
+    用户订阅爬虫记录
+    """
+
+    __tablename__ = 'user_subscribe_spider'
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(String(50), nullable=False, unique=True)
+    cursor = Column(String(50), nullable=False, default='')
+    status = Column(Integer, nullable=False, default=0)    # 0:未处理，1:处理中 2:处理完成
+
+    def __repr__(self):
+        return '<UserSubscribeSpider %r>' % self.spider_id
 

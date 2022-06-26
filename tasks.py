@@ -9,9 +9,10 @@ from __future__ import absolute_import
 from sqlalchemy.dialects.mysql import insert
 from sqlalchemy.orm import Session
 
-from internal.model.model import UserKeyword, User, CATCH_STATUS_DONE, CATCH_STATUS_ING, CATCH_STATUS_INIT, NoteKeyword
-from internal.utils import xhs_spider
-from internal.utils.xhs_helper import xhs_helper
+from internal.model.model import UserKeyword, User, CATCH_STATUS_DONE, CATCH_STATUS_ING, CATCH_STATUS_INIT, NoteKeyword, \
+    UserGroup, UserSubscribeSpider
+from internal.utils.xhs_helper import xhs_helper, CURRENT_USER_ID
+from internal.utils.xhs_spider import WhosecardXhsSpider
 from worker import app, engine, cache
 from celery.utils.log import get_task_logger
 
@@ -79,7 +80,7 @@ def print_ok():
 def search_user(session: Session, user_keyword: UserKeyword):
     """查询用户
     """
-    resp = xhs_spider.WhosecardXhsSpider.get_search_user(user_keyword.keyword, user_keyword.page_index)
+    resp = WhosecardXhsSpider.get_search_user(user_keyword.keyword, user_keyword.page_index)
     ok = resp.get('ok', False)
     if ok:
         data = resp.get('result', {}).get('data', {})
@@ -135,7 +136,7 @@ def cron_search_group():
 def search_note(session: Session, note_keyword: NoteKeyword):
     """查询用户笔记
     """
-    resp = xhs_spider.WhosecardXhsSpider.get_search_notes(note_keyword.keyword, note_keyword.page_index)
+    resp = WhosecardXhsSpider.get_search_notes(note_keyword.keyword, note_keyword.page_index)
     if resp.get('ok', False):
         data = resp.get('result', {}).get('data', {})
         items = data.get('items', [])
@@ -149,16 +150,6 @@ def search_note(session: Session, note_keyword: NoteKeyword):
                 user_name=u.get('nickname', ''),
                 image=u.get('images', ''),
             ).on_duplicate_key_update(user_name=u.get('nickname', '')))
-            # userid = item.get('note', {}).get('user', {}).get('userid', '')
-            # u_resp = xhs_spider.WhosecardXhsSpider.get_user_info(userid)
-            # if u_resp.get('ok', False):
-            #     u_data = u_resp.get('result', {}).get('data', {})
-            #     session.execute(insert(User).values(
-            #         user_id=u_data.get('userid', ''),
-            #         red_id=u_data.get('red_id', ''),
-            #         user_name=u_data.get('nickname', ''),
-            #         image=u_data.get('images', ''),
-            #     ).on_duplicate_key_update(user_name=u_data.get('nickname', '')))
         note_keyword.page_index += 1
         session.commit()
 
@@ -168,10 +159,8 @@ def search_note(session: Session, note_keyword: NoteKeyword):
 def cron_search_note():
     """定时搜索用户群聊列表，入库
     """
-    logger.info("cron_search_note")
     with Session(engine) as session:
         keyword = session.query(NoteKeyword).filter(NoteKeyword.status == 0).first()
-        print(keyword)
         if keyword:
             search_note(session, keyword)
 
@@ -184,7 +173,7 @@ def cron_user_padding():
     with Session(engine) as session:
         user = session.query(User).filter(User.group_count > 0, User.red_id == '').order_by(User.id).first()
         if user:
-            resp = xhs_spider.WhosecardXhsSpider.get_user_info(user.user_id)
+            resp = WhosecardXhsSpider.get_user_info(user.user_id)
             if not resp:
                 user.red_id = "获取失败，需人工处理"
                 session.commit()
@@ -195,5 +184,80 @@ def cron_user_padding():
                     session.commit()
 
 
+@app.task
+@CacheLockWrap('cron_group_members', expire=60)
+def cron_group_members():
+    """定时搜索用户群聊列表，入库
+    """
+    with Session(engine) as session:
+        group = session.query(UserGroup).filter(UserGroup.status == 0).first()
+        if group:
+            resp = xhs_helper.get_get_group_members(group.group_id)
+            ok = resp.get('success', False)
+            if ok:
+                data = resp.get('data', {})
+                user_list = data.get('user_infos', [])
+                for u in user_list:
+                    # 插入用户记录
+                    session.execute(insert(User).values(
+                        user_id=u.get('user_id', ''),
+                        user_name=u.get('nickname', ''),
+                        image=u.get('image', ''),
+                    ).on_duplicate_key_update(user_id=u.get('user_id', '')))
+                    # 插入用户关注
+                    session.execute(insert(UserSubscribeSpider).values(
+                        user_id=u.get('user_id', ''),
+                    ).on_duplicate_key_update(user_id=u.get('user_id', '')))
+                group.status = CATCH_STATUS_DONE
+                session.commit()
 
 
+@app.task
+@CacheLockWrap('cron_user_subscribe', expire=60)
+def cron_user_subscribe():
+    """定时搜索用户关注列表，入库
+    """
+    with Session(engine) as session:
+        spider = session.query(UserSubscribeSpider).filter(UserSubscribeSpider.status == 0).first()
+        if spider:
+            resp = WhosecardXhsSpider.get_user_followings(spider.user_id, cursor=spider.cursor)
+            if not resp:
+                spider.status = CATCH_STATUS_DONE
+                session.commit()
+            else:
+                if resp.get('ok', False):
+                    data = resp.get('result', {}).get('data', {})
+                    has_more = data.get('has_more', False)
+                    cursor = data.get('cursor', '')
+                    users = data.get('users', [])
+                    if not has_more:
+                        spider.status = CATCH_STATUS_DONE
+                    if cursor:
+                        spider.cursor = cursor
+                    for u in users:
+                        # 插入用户记录
+                        session.execute(insert(User).values(
+                            user_id=u.get('userid', ''),
+                            user_name=u.get('nickname', ''),
+                            image=u.get('images', ''),
+                        ).on_duplicate_key_update(user_id=u.get('userid', '')))
+                    session.commit()
+
+
+@app.task
+@CacheLockWrap('cron_user_groups', expire=60)
+def cron_user_groups():
+    with Session(engine) as session:
+        resp = xhs_helper.get_my_groups()
+        ok = resp.get('success', False)
+        if ok:
+            data = resp.get('data', {})
+            chats = data.get('chats', [])
+            for c in chats:
+                # 插入用户记录
+                session.execute(insert(UserGroup).values(
+                    user_id=CURRENT_USER_ID,
+                    group_id=c.get('group_id', ''),
+                    group_name=c.get('info', {}).get('group_name', ''),
+                ).on_duplicate_key_update(group_id=c.get('group_id', '')))
+            session.commit()
